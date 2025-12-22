@@ -14,6 +14,10 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage
 
+from carts.views import _cart_id
+from carts.models import Cart, CartItem
+import requests
+
 def register(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
@@ -58,10 +62,56 @@ def login(request):
         password = request.POST['password']
 
         user = auth.authenticate(email=email, password=password)
+
+
         if user is not None:
+            # --- YAHAN SE MERGE LOGIC START HOTI HAI ---
+            try:
+                # Session-based cart id hasil karein
+                cart = Cart.objects.get(cart_id=_cart_id(request))
+                # Session cart ke items nikaalein
+                session_cart_items = CartItem.objects.filter(cart=cart)
+
+                if session_cart_items.exists():
+                    # User ke pehle se maujood cart items (agar login pehle bhi kiya tha)
+                    user_cart_items = CartItem.objects.filter(user=user)
+
+                    for s_item in session_cart_items:
+                        s_variations = list(s_item.variations.all())
+                        found_match = False
+
+                        for u_item in user_cart_items:
+                            u_variations = list(u_item.variations.all())
+
+                            # Product aur Variations dono check karein
+                            if u_item.product == s_item.product and set(u_variations) == set(s_variations):
+                                u_item.quantity += s_item.quantity
+                                u_item.save()
+                                s_item.delete() # Duplicate delete kar dein
+                                found_match = True
+                                break
+
+                        if not found_match:
+                            # Agar match nahi mila to session item ko user se attach kar dein
+                            s_item.user = user
+                            s_item.save()
+            except ObjectDoesNotExist:
+                pass
+
+
             auth.login(request, user)
             messages.success(request, 'You are now Logged in.')
-            return redirect('dashboard')
+            url = request.META.get('HTTP_REFERER')
+            try:
+                query = requests.utils.urlparse(url).query
+                params = dict(x.split('=') for x in query.split('&'))
+                if 'next' in params:
+                    nextPage = params['next']
+                    return redirect(nextPage)
+
+            except:
+                return redirect('dashboard')
+                
         else:
             messages.error(request, 'Invalid login credentials')
             return redirect('login')
