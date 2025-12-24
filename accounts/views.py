@@ -13,6 +13,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage
+from django.core.exceptions import ObjectDoesNotExist
 
 from carts.views import _cart_id
 from carts.models import Cart, CartItem
@@ -111,7 +112,7 @@ def login(request):
 
             except:
                 return redirect('dashboard')
-                
+
         else:
             messages.error(request, 'Invalid login credentials')
             return redirect('login')

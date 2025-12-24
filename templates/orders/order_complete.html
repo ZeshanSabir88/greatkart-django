@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container text-center" style="padding: 100px 0;">
+    <div class="card shadow-sm p-5">
+        <div class="mb-4">
+            <i class="fa fa-check-circle text-success" style="font-size: 60px;"></i>
+        </div>
+        <h2 class="mb-3">Thank You for Your Order!</h2>
+        <p class="lead">Your order has been placed successfully.</p>
+        <hr>
+        <div class="order-details my-4">
+            <p><strong>Order Number:</strong> <span class="text-primary">{{ order.order_number }}</span></p>
+            <p><strong>Payment Method:</strong> Cash on Delivery</p>
+            <p><strong>Status:</strong> Pending Confirmation</p>
+        </div>
+        <p class="text-muted">A confirmation email has been sent to {{ order.email }}.</p>
+        <div class="mt-4">
+            <a href="{% url 'store' %}" class="btn btn-primary btn-lg">Continue Shopping</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
